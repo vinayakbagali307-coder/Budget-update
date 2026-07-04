@@ -1,0 +1,1893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#101a2e">
+<title>Budget Passbook</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Passbook">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#101a2e;
+    --navy2:#17243d;
+    --navy3:#1e2f4d;
+    --paper:#efe3c4;
+    --paper2:#e7d9b4;
+    --paper-line:#cdb98c;
+    --ink:#1b2a4a;
+    --ink-soft:#4a5675;
+    --brass:#c9a227;
+    --brass-light:#e0bc4f;
+    --red:#a83d3d;
+    --red-bg:#f6e4e0;
+    --green:#3f7d5c;
+    --green-bg:#e2eee3;
+    --radius-card:20px;
+    --shadow-deep: 0 20px 40px -12px rgba(0,0,0,0.55);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, #1c2c4c 0%, transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 0%, #16233d 0%, transparent 55%),
+      var(--navy);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    min-height:100vh;
+    padding: max(20px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
+  }
+  .wrap{max-width:520px;margin:0 auto;}
+
+  /* ===== Header ===== */
+  header.top{
+    text-align:center;
+    padding: 10px 0 22px;
+    color:#f1e8d6;
+  }
+  header.top .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:var(--brass-light);
+    margin-bottom:6px;
+  }
+  header.top h1{
+    font-family:'Roboto Slab',serif;
+    font-weight:800;
+    font-size:28px;
+    margin:0 0 4px;
+    letter-spacing:.01em;
+  }
+  header.top .sub{
+    font-size:13px;
+    color:#9fb0cc;
+  }
+  .brass-rule{
+    height:2px;
+    width:64px;
+    margin:14px auto 0;
+    background: linear-gradient(90deg, transparent, var(--brass), transparent);
+  }
+
+  /* ===== Ledger Card (paper) ===== */
+  .card{
+    background: linear-gradient(180deg, var(--paper) 0%, var(--paper2) 100%);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-deep);
+    padding: 22px 20px 22px 30px;
+    margin-bottom: 20px;
+    position:relative;
+    overflow:hidden;
+  }
+  .card::before{
+    /* perforation holes */
+    content:"";
+    position:absolute;
+    left:10px; top:0; bottom:0;
+    width:6px;
+    background-image: radial-gradient(circle, var(--navy) 2.5px, transparent 2.6px);
+    background-size: 6px 22px;
+    background-repeat: repeat-y;
+    background-position: 0 10px;
+    opacity:.85;
+  }
+  .card h2{
+    font-family:'Roboto Slab', serif;
+    font-size:15px;
+    text-transform:uppercase;
+    letter-spacing:.09em;
+    color:var(--ink-soft);
+    margin:0 0 16px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .card h2 .n{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    background:var(--navy);
+    color:var(--brass-light);
+    padding:2px 7px;
+    border-radius:5px;
+    letter-spacing:0;
+  }
+
+  .plan-header-row{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
+  .plan-header-row h2{margin:0;}
+  .plan-toggle-link{
+    background:none; border:none; color:#8a6d1a; font-weight:600; font-size:12.5px;
+    cursor:pointer; padding:6px 8px; margin:-6px -8px; font-family:'IBM Plex Sans',sans-serif;
+    text-decoration:underline; text-underline-offset:2px;
+  }
+  .plan-summary-row{
+    display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px;
+    font-size:13px; color:var(--ink-soft); padding:2px 0 4px;
+  }
+  .plan-summary-row b{color:var(--ink); font-weight:600;}
+  .plan-summary-row .dot-sep{opacity:.5;}
+
+  /* Income field */
+  .field-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--paper-line);
+  }
+  .field-row:last-child{border-bottom:none;}
+  .field-label{font-size:14.5px; font-weight:500; color:var(--ink);}
+  .amount-input-wrap{
+    display:flex; align-items:center; gap:4px;
+    background:rgba(255,255,255,.55);
+    border:1px solid var(--paper-line);
+    border-radius:10px;
+    padding: 7px 10px;
+  }
+  .amount-input-wrap .rupee{font-family:'IBM Plex Mono',monospace; color:var(--ink-soft); font-size:14px;}
+  input.amount{
+    border:none;background:transparent;outline:none;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:15px; font-weight:600; color:var(--ink);
+    width: 92px; text-align:right;
+  }
+  input.amount::placeholder{color:#a9a08a;}
+
+  /* Category budget rows */
+  .cat-row{ padding: 12px 0; border-bottom: 1px dashed var(--paper-line); }
+  .cat-row:last-of-type{border-bottom:none;}
+  .cat-top{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:8px;}
+  .cat-name-wrap{display:flex; align-items:center; gap:8px; flex:1; min-width:0;}
+  .cat-dot{width:9px;height:9px;border-radius:50%;flex:none;}
+  input.cat-name{
+    border:none;background:transparent;outline:none;
+    font-size:14.5px; font-weight:500; color:var(--ink);
+    width:100%; font-family:'IBM Plex Sans',sans-serif;
+    border-bottom:1px solid transparent;
+  }
+  input.cat-name:focus{border-bottom:1px solid var(--brass);}
+  .cat-del{
+    background:none;border:none;color:#b08a8a;font-size:17px;
+    cursor:pointer; padding:10px; margin:-10px; line-height:1; flex:none;
+  }
+  .bar-track{
+    height:7px; border-radius:5px; background:rgba(27,42,74,.10);
+    overflow:hidden;
+  }
+  .bar-fill{height:100%; border-radius:5px; transition:width .35s ease;}
+  .cat-meta{
+    display:flex; justify-content:space-between; margin-top:6px;
+    font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft);
+  }
+
+  .add-cat-btn{
+    width:100%; margin-top:14px;
+    background:transparent; border:1.5px dashed var(--brass);
+    color:#8a6d1a; font-weight:600; font-size:13.5px;
+    border-radius:10px; padding:10px; cursor:pointer;
+    font-family:'IBM Plex Sans',sans-serif;
+  }
+  .add-cat-btn:active{background:rgba(201,162,39,.12);}
+
+  /* Stamp / balance seal */
+  .stamp-wrap{
+    display:flex; justify-content:center; margin: 18px 0 4px;
+  }
+  .stamp{
+    border: 3px solid var(--navy);
+    border-radius: 14px;
+    padding: 12px 26px;
+    transform: rotate(-2.5deg);
+    text-align:center;
+    position:relative;
+    background: rgba(16,26,46,0.03);
+  }
+  .stamp::before, .stamp::after{
+    content:"";
+    position:absolute; inset:5px;
+    border:1px solid var(--navy);
+    border-radius:9px;
+    opacity:.5;
+  }
+  .stamp .lbl{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--navy); opacity:.75; margin-bottom:2px;
+  }
+  .stamp .val{
+    font-family:'Roboto Slab',serif;
+    font-weight:800; font-size:26px; letter-spacing:.01em;
+  }
+  .stamp.positive .val{color:var(--green);}
+  .stamp.negative .val{color:var(--red);}
+
+  /* ===== Ledger entries ===== */
+  .quick-add-row{display:flex; gap:8px; margin-bottom:8px;}
+  .quick-add-row input{
+    flex:1; border:1px solid var(--paper-line); background:rgba(255,255,255,.55);
+    border-radius:10px; padding:11px 13px; font-size:14px; font-family:'IBM Plex Sans',sans-serif;
+    color:var(--ink); outline:none;
+  }
+  .quick-add-row input:focus{border-color:var(--brass);}
+  .quick-add-row input::placeholder{color:#a9a08a;}
+  .quick-add-btn{
+    background:var(--brass); color:var(--navy); border:none; border-radius:10px;
+    padding:0 18px; font-weight:700; font-size:13.5px; cursor:pointer; flex:none;
+    font-family:'IBM Plex Sans',sans-serif;
+  }
+  .quick-add-btn:disabled{opacity:.6;}
+  .quick-add-hint{font-size:11px; color:var(--ink-soft); margin-bottom:16px;}
+
+  .entry-form{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:10px;
+    margin-bottom:16px;
+  }
+  .entry-form .full{grid-column: 1 / -1;}
+  .entry-form label{
+    display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--ink-soft); margin-bottom:4px; font-weight:600;
+  }
+  .entry-form input, .entry-form select{
+    width:100%; border:1px solid var(--paper-line); background:rgba(255,255,255,.55);
+    border-radius:9px; padding:9px 10px; font-size:14px; font-family:'IBM Plex Sans',sans-serif;
+    color:var(--ink); outline:none;
+  }
+  .entry-form input:focus, .entry-form select:focus{border-color:var(--brass);}
+  .type-toggle{display:flex; gap:8px;}
+  .type-btn{
+    flex:1; text-align:center; padding:9px; border-radius:9px; cursor:pointer;
+    border:1px solid var(--paper-line); font-size:13px; font-weight:600;
+    background:rgba(255,255,255,.4); color:var(--ink-soft);
+  }
+  .type-btn.active.expense{background:var(--red-bg); border-color:var(--red); color:var(--red);}
+  .type-btn.active.income{background:var(--green-bg); border-color:var(--green); color:var(--green);}
+  .submit-entry{
+    width:100%; background:var(--navy); color:#f1e8d6; border:none;
+    border-radius:10px; padding:12px; font-size:14.5px; font-weight:700;
+    cursor:pointer; font-family:'IBM Plex Sans',sans-serif; letter-spacing:.01em;
+  }
+  .submit-entry:active{background:var(--navy2);}
+
+  .ledger-list{max-height:340px; overflow-y:auto; margin: 0 -6px 0 -14px; padding: 0 6px 0 14px;}
+  .ledger-row{
+    display:flex; align-items:center; gap:10px;
+    padding:10px 0; border-bottom:1px dashed var(--paper-line);
+  }
+  .ledger-row:last-child{border-bottom:none;}
+  .led-dot{width:8px;height:8px;border-radius:50%;flex:none;}
+  .led-dot.income{background:var(--green);}
+  .led-dot.expense{background:var(--red);}
+  .led-mid{flex:1; min-width:0;}
+  .led-note{font-size:13.5px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .led-meta{font-size:11px; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace;}
+  .led-amt{font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:14px; flex:none;}
+  .led-amt.income{color:var(--green);}
+  .led-amt.expense{color:var(--red);}
+  .led-bal{font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--ink-soft); flex:none; min-width:64px; text-align:right;}
+  .led-del{background:none;border:none;color:#c2b8a0;font-size:16px;cursor:pointer;flex:none;padding:10px;margin:-10px;}
+
+  .recur-row{
+    display:flex; align-items:center; gap:12px; padding:13px 0;
+    border-bottom:1px dashed var(--paper-line);
+  }
+  .recur-row:last-child{border-bottom:none;}
+  .recur-dot{width:9px;height:9px;border-radius:50%;flex:none;}
+  .recur-mid{flex:1; min-width:0;}
+  .recur-name{font-size:14px; font-weight:600; color:var(--ink); text-transform:capitalize;}
+  .recur-meta{font-size:11.5px; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; margin-top:3px;}
+  .recur-meta .arrow{color:#8a6d1a; font-weight:600;}
+  .recur-total{font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:14.5px; color:var(--red); flex:none; text-align:right;}
+  .recur-total .per{display:block; font-size:10.5px; font-weight:500; color:var(--ink-soft); font-family:'IBM Plex Sans',sans-serif; margin-top:2px;}
+  .empty-state{
+    text-align:center; padding: 24px 10px; color:var(--ink-soft); font-size:13.5px;
+  }
+
+  /* ===== Breakdown chart ===== */
+  .donut-wrap{display:flex; align-items:center; gap:20px; flex-wrap:wrap;}
+  .legend{flex:1; min-width:150px; display:flex; flex-direction:column; gap:8px;}
+  .legend-item{display:flex; align-items:center; gap:8px; font-size:12.5px;}
+  .legend-item .dot{width:9px;height:9px;border-radius:50%;flex:none;}
+  .legend-item .name{flex:1; color:var(--ink);}
+  .legend-item .pct{font-family:'IBM Plex Mono',monospace; color:var(--ink-soft); font-size:11.5px;}
+
+  footer{
+    text-align:center; color:#5c6d8e; font-size:11px; padding: 10px 0 4px;
+    font-family:'IBM Plex Mono',monospace; letter-spacing:.03em;
+  }
+
+  ::-webkit-scrollbar{width:5px;}
+  ::-webkit-scrollbar-thumb{background:var(--paper-line); border-radius:5px;}
+
+  .toast{
+    position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px);
+    background:var(--navy); color:#f1e8d6; padding:10px 10px 10px 18px; border-radius:999px;
+    font-size:13px; font-weight:500; box-shadow:0 10px 24px rgba(0,0,0,.4);
+    opacity:0; pointer-events:none; transition:opacity .25s ease, transform .25s ease;
+    z-index:60; border:1px solid rgba(201,162,39,.4);
+    display:flex; align-items:center; gap:10px; max-width: calc(100% - 32px);
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto;}
+  .toast .toast-msg{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .toast .toast-undo{
+    background:rgba(201,162,39,.18); color:var(--brass-light); border:none; border-radius:999px;
+    padding:6px 14px; font-size:12.5px; font-weight:700; cursor:pointer; flex:none;
+    font-family:'IBM Plex Sans',sans-serif;
+  }
+
+  /* Onboarding overlay */
+  .onboard-overlay{
+    position:fixed; inset:0; z-index:70; display:flex; align-items:center; justify-content:center;
+    background:rgba(6,10,20,.72); padding:20px; opacity:0; pointer-events:none;
+    transition:opacity .3s ease;
+  }
+  .onboard-overlay.show{opacity:1; pointer-events:auto;}
+  .onboard-card{
+    background: linear-gradient(180deg, var(--paper) 0%, var(--paper2) 100%);
+    border-radius:24px; max-width:400px; width:100%; padding:30px 26px 26px;
+    box-shadow: var(--shadow-deep); transform:translateY(14px) scale(.98); transition:transform .3s ease;
+    position:relative; max-height:88vh; overflow-y:auto;
+  }
+  .onboard-overlay.show .onboard-card{ transform:translateY(0) scale(1); }
+  .onboard-card .eyebrow{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase;
+    color:#8a6d1a; margin-bottom:6px; font-weight:600;
+  }
+  .onboard-card h2{
+    font-family:'Roboto Slab',serif; font-weight:800; font-size:22px; color:var(--ink); margin:0 0 6px;
+  }
+  .onboard-card .sub{font-size:13.5px; color:var(--ink-soft); margin-bottom:20px; line-height:1.5;}
+  .onboard-steps{display:flex; flex-direction:column; gap:14px; margin-bottom:24px;}
+  .onboard-step{display:flex; gap:12px; align-items:flex-start;}
+  .onboard-step .num{
+    flex:none; width:26px; height:26px; border-radius:50%; background:var(--navy); color:var(--brass-light);
+    display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px; font-weight:700;
+  }
+  .onboard-step .txt{font-size:13.5px; color:var(--ink); line-height:1.45; padding-top:3px;}
+  .onboard-step .txt b{color:var(--ink);}
+  .onboard-dismiss{
+    width:100%; background:var(--navy); color:#f1e8d6; border:none; border-radius:12px;
+    padding:14px; font-size:14.5px; font-weight:700; cursor:pointer; font-family:'IBM Plex Sans',sans-serif;
+  }
+
+  /* Empty state for categories */
+  .cat-empty{
+    text-align:center; padding:20px 10px; color:var(--ink-soft); font-size:13.5px; line-height:1.5;
+  }
+
+  .install-btn{
+    display:none; width:100%; margin: 0 0 20px; background:var(--brass); color:var(--navy);
+    border:none; border-radius:12px; padding:13px; font-weight:700; font-size:14px;
+    cursor:pointer; font-family:'IBM Plex Sans',sans-serif;
+  }
+  .install-btn.show{display:block;}
+
+  /* ===== AI features ===== */
+  .status-row{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px;}
+  .ai-status{display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600;}
+  .ai-status .dot{width:8px;height:8px;border-radius:50%;}
+  .ai-status.on .dot{background:var(--green);}
+  .ai-status.off .dot{background:#b08a8a;}
+  .ai-status.on{color:var(--green);}
+  .ai-status.off{color:var(--ink-soft);}
+  .ai-note{font-size:11.5px; color:var(--ink-soft); line-height:1.5;}
+  .ai-note a{color:#8a6d1a;}
+
+  .suggest-chip{
+    display:none; align-items:center; gap:6px; margin-top:8px;
+    font-size:12px; color:#8a6d1a; cursor:pointer; font-weight:600;
+  }
+  .suggest-chip.show{display:inline-flex;}
+
+  .ai-insights-btn{
+    width:100%; margin-top:16px; background:transparent; border:1.5px solid var(--navy);
+    color:var(--navy); font-weight:700; font-size:13.5px; border-radius:10px; padding:11px;
+    cursor:pointer; font-family:'IBM Plex Sans',sans-serif; display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .ai-insights-panel{margin-top:14px; display:none;}
+  .ai-insights-panel.show{display:block;}
+  .ai-insight-item{
+    display:flex; gap:10px; padding:10px 0; border-bottom:1px dashed var(--paper-line); font-size:13.5px; line-height:1.5;
+  }
+  .ai-insight-item:last-child{border-bottom:none;}
+  .ai-insight-item .spark{flex:none; font-size:14px;}
+
+  .chat-list{max-height:360px; overflow-y:auto; margin-bottom:14px; display:flex; flex-direction:column; gap:10px;}
+  .chat-bubble{max-width:85%; padding:10px 13px; border-radius:14px; font-size:13.5px; line-height:1.5;}
+  .chat-bubble.user{align-self:flex-end; background:var(--navy); color:#f1e8d6; border-bottom-right-radius:4px;}
+  .chat-bubble.ai{
+    align-self:flex-start; background:rgba(255,255,255,.6); border:1px solid var(--paper-line);
+    color:var(--ink); border-bottom-left-radius:4px;
+  }
+  .chat-input-row{display:flex; gap:8px;}
+  .chat-input-row input{
+    flex:1; border:1px solid var(--paper-line); background:rgba(255,255,255,.55);
+    border-radius:9px; padding:10px 12px; font-size:14px; color:var(--ink); outline:none;
+  }
+  .chat-input-row input:focus{border-color:var(--brass);}
+
+  .plan-chip-row{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;}
+  .plan-chip{
+    background:rgba(255,255,255,.45); border:1.5px solid var(--paper-line); color:var(--ink-soft);
+    border-radius:999px; padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer;
+    font-family:'IBM Plex Sans',sans-serif;
+  }
+  .plan-chip.active{background:var(--navy); border-color:var(--navy); color:#f1e8d6;}
+  #planCustomInput{
+    width:100%; border:1px solid var(--paper-line); background:rgba(255,255,255,.55);
+    border-radius:10px; padding:10px 12px; font-size:14px; font-family:'IBM Plex Sans',sans-serif;
+    color:var(--ink); outline:none; margin-bottom:12px;
+  }
+  .plan-form-row{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .plan-form-row label{
+    display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--ink-soft); margin-bottom:4px; font-weight:600;
+  }
+  .plan-form-row input, #planItDetails{
+    width:100%; border:1px solid var(--paper-line); background:rgba(255,255,255,.55);
+    border-radius:9px; padding:9px 10px; font-size:14px; font-family:'IBM Plex Sans',sans-serif;
+    color:var(--ink); outline:none;
+  }
+  .plan-form-row input:focus, #planItDetails:focus{border-color:var(--brass);}
+  .plan-output{
+    margin-top:18px; padding:16px 18px; background:rgba(255,255,255,.4);
+    border:1px dashed var(--paper-line); border-radius:14px;
+    font-size:13.5px; line-height:1.65; color:var(--ink); white-space:pre-wrap;
+  }
+  .plan-output .plan-weather{
+    font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft);
+    margin-bottom:10px; padding-bottom:10px; border-bottom:1px dashed var(--paper-line);
+  }
+  .chat-send{
+    background:var(--navy); color:#f1e8d6; border:none; border-radius:9px; padding:0 16px;
+    font-weight:700; cursor:pointer;
+  }
+  .spinner{
+    width:13px; height:13px; border-radius:50%; border:2px solid rgba(16,26,46,.2);
+    border-top-color: var(--navy); animation: spin .7s linear infinite; display:inline-block;
+  }
+  .chat-bubble.ai .spinner{border-color: rgba(27,42,74,.2); border-top-color: var(--ink);}
+  @keyframes spin{ to{ transform:rotate(360deg);} }
+</style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="eyebrow">Personal Finance · No. 001</div>
+    <h1>Budget Passbook</h1>
+    <div class="sub" id="monthLabel">—</div>
+    <div class="brass-rule"></div>
+  </header>
+
+  <button class="install-btn" id="installBtn">⬇ Install Passbook on this phone</button>
+
+  <!-- Cross-device sync -->
+  <section class="card" aria-label="Sync across devices">
+    <h2>Sync <span class="n">☁</span></h2>
+    <div id="syncSignedOut">
+      <div class="ai-note" style="margin-bottom:14px;">Sign in with Google to access this same budget on your phone, laptop, or any device — everything stays tied to your account.</div>
+      <div id="gSignInBtn"></div>
+    </div>
+    <div id="syncSignedIn" style="display:none;">
+      <div class="status-row" style="margin-bottom:0;">
+        <div class="ai-status on"><span class="dot"></span><span id="syncStatusText">Synced</span></div>
+      </div>
+      <div class="ai-note" id="syncEmailText" style="margin-top:8px;"></div>
+      <button class="plan-toggle-link" id="signOutBtn" style="margin-top:6px; padding-left:0;">Sign out</button>
+    </div>
+  </section>
+
+  <!-- AI status / trial / paywall -->
+  <section class="card" aria-label="AI status">
+    <div id="aiStatusOn" style="display:none;">
+      <div class="status-row" style="margin-bottom:0;">
+        <div class="ai-status on"><span class="dot"></span><span id="aiStatusOnText">✨ AI features ready</span></div>
+      </div>
+      <div class="ai-note" style="margin-top:8px;">Category suggestions, insights, and chat use AI. See the <a href="privacy-policy.html">privacy policy</a> for what's sent and to whom.</div>
+    </div>
+
+    <div id="aiPaywall" style="display:none;">
+      <div class="status-row" style="margin-bottom:0;">
+        <div class="ai-status off"><span class="dot"></span><span>Your free AI trial has ended</span></div>
+      </div>
+      <div class="ai-note" style="margin-top:8px; margin-bottom:16px;">Subscribe for ₹50/month to keep using category suggestions, insights, and chat. The rest of the app — budgeting and your ledger — always stays free.</div>
+      <button class="submit-entry" id="subscribeBtn" style="background:var(--brass); color:var(--navy);">Subscribe — ₹50/month</button>
+      <div class="ai-note" id="subscribeHint" style="margin-top:10px;"></div>
+    </div>
+  </section>
+
+  <!-- Budget planning card -->
+  <section class="card" aria-label="Monthly budget plan">
+    <div class="plan-header-row">
+      <h2 style="margin:0;">Monthly Plan <span class="n">₹</span></h2>
+      <button class="plan-toggle-link" id="planToggleBtn">Hide</button>
+    </div>
+
+    <div id="planSummary" class="plan-summary-row" style="display:none;"></div>
+
+    <div id="planDetails">
+      <div class="field-row">
+        <div class="field-label">Monthly income</div>
+        <div class="amount-input-wrap">
+          <span class="rupee">₹</span>
+          <input type="number" inputmode="decimal" class="amount" id="incomeInput" placeholder="0" min="0">
+        </div>
+      </div>
+
+      <div id="categoriesWrap"></div>
+
+      <button class="add-cat-btn" id="addCatBtn">+ Add budget category</button>
+
+      <div class="stamp-wrap">
+        <div class="stamp positive" id="stampBox">
+          <div class="lbl">Remaining Budget</div>
+          <div class="val" id="stampVal">₹0</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Ledger entry card -->
+  <section class="card" aria-label="Add ledger entry">
+    <h2>New Entry</h2>
+
+    <div class="quick-add-row">
+      <input type="text" id="quickAddInput" placeholder="✨ Try: spent 200 on chai and samosa">
+      <button class="quick-add-btn" id="quickAddBtn">Parse</button>
+    </div>
+    <div class="quick-add-hint">Type it naturally — AI fills in the fields below, you just confirm.</div>
+
+    <div class="entry-form">
+      <div class="full type-toggle">
+        <div class="type-btn expense active" data-type="expense" id="typeExpenseBtn">− Expense</div>
+        <div class="type-btn income" data-type="income" id="typeIncomeBtn">+ Income</div>
+      </div>
+      <div class="full">
+        <label for="entryNote">Description</label>
+        <input type="text" id="entryNote" placeholder="e.g. Groceries, Swiggy, Freelance">
+      </div>
+      <div>
+        <label for="entryCategory">Category</label>
+        <select id="entryCategory"></select>
+        <div class="suggest-chip" id="suggestChip">✨ <span id="suggestText"></span></div>
+      </div>
+      <div>
+        <label for="entryAmount">Amount</label>
+        <input type="number" inputmode="decimal" id="entryAmount" placeholder="₹0" min="0">
+      </div>
+      <div class="full">
+        <label for="entryDate">Date</label>
+        <input type="date" id="entryDate">
+      </div>
+      <div class="full">
+        <button class="submit-entry" id="addEntryBtn">Add to Passbook</button>
+      </div>
+    </div>
+
+    <div class="ledger-list" id="ledgerList"></div>
+  </section>
+
+  <!-- Recurring spends card -->
+  <section class="card" aria-label="Recurring spending patterns" id="recurringCard" style="display:none;">
+    <h2>Recurring Spends <span class="n">🔁</span></h2>
+    <div class="ai-note" style="margin-bottom:14px;">Things you pay for more than once show up here, so you can see where they're really going.</div>
+    <div id="recurringList"></div>
+  </section>
+
+  <!-- Breakdown card -->
+  <section class="card" aria-label="Spending breakdown" id="breakdownCard">
+    <h2>Spend Breakdown <span class="n" id="spendPct">0%</span></h2>
+    <div class="donut-wrap">
+      <svg width="140" height="140" viewBox="0 0 140 140" id="donutSvg" role="img" aria-label="Spending by category donut chart"></svg>
+      <div class="legend" id="legendWrap"></div>
+    </div>
+    <button class="ai-insights-btn" id="insightsBtn">✨ Get AI Insights</button>
+    <div class="ai-insights-panel" id="insightsPanel"></div>
+  </section>
+
+  <!-- AI chat assistant -->
+  <section class="card" aria-label="Ask Passbook AI assistant">
+    <h2>Ask Passbook <span class="n">✨</span></h2>
+    <div class="chat-list" id="chatList">
+      <div class="empty-state" id="chatEmpty">Ask about your spending, savings, or budget — e.g. "Can I afford a ₹2000 dinner this week?"</div>
+    </div>
+    <div class="chat-input-row">
+      <input type="text" id="chatInput" placeholder="Ask a question about your budget...">
+      <button class="chat-send" id="chatSendBtn">Send</button>
+    </div>
+  </section>
+
+  <!-- Plan It: occasion planner -->
+  <section class="card" aria-label="AI occasion planner">
+    <h2>Plan It <span class="n">✨</span></h2>
+    <div class="ai-note" style="margin-bottom:14px;">Pick what you're planning — AI checks real weather and current general deals to help you plan it within budget.</div>
+
+    <div class="plan-chip-row" id="planChipRow">
+      <button class="plan-chip active" data-occasion="Date Night">Date</button>
+      <button class="plan-chip" data-occasion="Shopping Trip">Shopping</button>
+      <button class="plan-chip" data-occasion="Trip">Trip</button>
+      <button class="plan-chip" data-occasion="Outing">Outing</button>
+      <button class="plan-chip" data-occasion="Dinner">Dinner</button>
+      <button class="plan-chip" data-occasion="__custom">Custom</button>
+    </div>
+    <input type="text" id="planCustomInput" placeholder="What are you planning?" style="display:none;">
+
+    <div class="plan-form-row">
+      <div>
+        <label for="planCity">City</label>
+        <input type="text" id="planCity" placeholder="e.g. Mumbai">
+      </div>
+      <div>
+        <label for="planBudget">Budget</label>
+        <input type="number" inputmode="decimal" id="planBudget" placeholder="₹0">
+      </div>
+    </div>
+    <input type="text" id="planItDetails" placeholder="Any details? e.g. this Saturday evening, with a friend" style="margin-top:10px;">
+
+    <button class="submit-entry" id="planItBtn" style="margin-top:14px; background:var(--brass); color:var(--navy);">Get My Plan</button>
+
+    <div id="planOutput" class="plan-output" style="display:none;"></div>
+  </section>
+
+  <footer>Saved on this device</footer>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <span class="toast-msg" id="toastMsg"></span>
+  <button class="toast-undo" id="toastUndoBtn" style="display:none;">Undo</button>
+</div>
+
+<div class="onboard-overlay" id="onboardOverlay">
+  <div class="onboard-card">
+    <div class="eyebrow">Welcome</div>
+    <h2>Your Budget Passbook</h2>
+    <div class="sub">A ledger-style way to plan, track, and understand your money — three quick things to know:</div>
+    <div class="onboard-steps">
+      <div class="onboard-step">
+        <span class="num">1</span>
+        <span class="txt"><b>Set your monthly plan.</b> Enter your income and split it across budget categories — tap any category name or amount to edit it.</span>
+      </div>
+      <div class="onboard-step">
+        <span class="num">2</span>
+        <span class="txt"><b>Log entries as they happen.</b> Add expenses or income — your passbook keeps a running ledger automatically.</span>
+      </div>
+      <div class="onboard-step">
+        <span class="num">3</span>
+        <span class="txt"><b>Try AI for free.</b> Category suggestions, spending insights, and chat are free for 3 days, right from the Ask Passbook section.</span>
+      </div>
+    </div>
+    <button class="onboard-dismiss" id="onboardDismissBtn">Let's go</button>
+  </div>
+</div>
+
+<div class="onboard-overlay" id="syncConflictOverlay">
+  <div class="onboard-card">
+    <div class="eyebrow">Cloud data found</div>
+    <h2>Two versions of your budget</h2>
+    <div class="sub">This Google account already has budget data saved from another device, and this device also has its own data. Which one do you want to keep?</div>
+    <button class="onboard-dismiss" id="useCloudBtn" style="margin-bottom:10px;">Use cloud data (this device's data will be replaced)</button>
+    <button class="onboard-dismiss" id="useLocalBtn" style="background:transparent; color:var(--ink); border:2px solid var(--paper-line);">Keep this device's data (cloud will be replaced)</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const STORAGE_KEY = "budgetPassbook.v1";
+  const DEVICE_ID_STORAGE = "budgetPassbook.deviceId";
+  // Replace this with your deployed Cloudflare Worker URL after running `wrangler deploy`
+  const WORKER_URL = "https://budget-passbook-ai.YOUR-SUBDOMAIN.workers.dev";
+  const AI_MODEL_FAST = "claude-haiku-4-5-20251001";
+  const AI_MODEL_SMART = "claude-sonnet-5";
+  const PALETTE = ["#c9a227","#3f7d5c","#a83d3d","#3d6b9c","#8a5fb0","#c76b3f","#4a8a8a","#9c6b3f"];
+
+  // ---- Subscription / trial config ----
+  // Must match the applicationId in your Bubblewrap / Android project exactly.
+  const PACKAGE_NAME = "com.yourname.budgetpassbook";
+  // Must match the Subscription ID you create in Play Console exactly.
+  const SUBSCRIPTION_ID = "premium_monthly";
+  const TRIAL_DAYS = 3;
+  const TRIAL_START_STORAGE = "budgetPassbook.trialStart";
+  const SUBSCRIPTION_STORAGE = "budgetPassbook.subscription";
+  const LAST_CATEGORY_STORAGE = "budgetPassbook.lastCategory";
+  const LAST_CITY_STORAGE = "budgetPassbook.lastCity";
+  const ONBOARDED_STORAGE = "budgetPassbook.onboarded";
+  const PLAN_COLLAPSED_STORAGE = "budgetPassbook.planCollapsed";
+  const PLAN_SETUP_DONE_STORAGE = "budgetPassbook.planSetupDone";
+  const RECHECK_INTERVAL_MS = 12 * 60 * 60 * 1000; // re-verify with Google every 12h
+
+  // ---- Google Sign-In / sync config ----
+  // From Google Cloud Console → APIs & Services → Credentials (see worker/GOOGLE-SIGNIN-SETUP.md)
+  const GOOGLE_CLIENT_ID = "REPLACE_WITH_YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
+  const SYNC_SESSION_STORAGE = "budgetPassbook.syncSession"; // { idToken, email, sub, exp }
+  const SYNC_PUSH_DEBOUNCE_MS = 1500;
+
+  const defaultState = () => ({
+    income: 0,
+    categories: [
+      {id: cid(), name: "Rent", amount: 15000},
+      {id: cid(), name: "Groceries", amount: 6000},
+      {id: cid(), name: "Transport", amount: 2500},
+      {id: cid(), name: "Savings", amount: 8000}
+    ],
+    entries: []
+  });
+
+  function cid(){ return Math.random().toString(36).slice(2,9); }
+
+  let state = load();
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw) return JSON.parse(raw);
+    }catch(e){ /* ignore corrupt state */ }
+    return defaultState();
+  }
+  function save(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    catch(e){ showToast("Couldn't save — storage unavailable"); }
+    scheduleCloudPush();
+  }
+
+  // ---------- DOM refs ----------
+  const incomeInput = document.getElementById("incomeInput");
+  const categoriesWrap = document.getElementById("categoriesWrap");
+  const addCatBtn = document.getElementById("addCatBtn");
+  const stampBox = document.getElementById("stampBox");
+  const stampVal = document.getElementById("stampVal");
+  const planToggleBtn = document.getElementById("planToggleBtn");
+  const planSummary = document.getElementById("planSummary");
+  const planDetails = document.getElementById("planDetails");
+  const entryCategory = document.getElementById("entryCategory");
+  const entryNote = document.getElementById("entryNote");
+  const entryAmount = document.getElementById("entryAmount");
+  const entryDate = document.getElementById("entryDate");
+  const addEntryBtn = document.getElementById("addEntryBtn");
+  const quickAddInput = document.getElementById("quickAddInput");
+  const quickAddBtn = document.getElementById("quickAddBtn");
+  const ledgerList = document.getElementById("ledgerList");
+  const donutSvg = document.getElementById("donutSvg");
+  const legendWrap = document.getElementById("legendWrap");
+  const spendPct = document.getElementById("spendPct");
+  const recurringCard = document.getElementById("recurringCard");
+  const recurringList = document.getElementById("recurringList");
+  const monthLabel = document.getElementById("monthLabel");
+  const typeExpenseBtn = document.getElementById("typeExpenseBtn");
+  const typeIncomeBtn = document.getElementById("typeIncomeBtn");
+  const toast = document.getElementById("toast");
+  const toastMsg = document.getElementById("toastMsg");
+  const toastUndoBtn = document.getElementById("toastUndoBtn");
+  const onboardOverlay = document.getElementById("onboardOverlay");
+  const onboardDismissBtn = document.getElementById("onboardDismissBtn");
+
+  const suggestChip = document.getElementById("suggestChip");
+  const suggestText = document.getElementById("suggestText");
+  const insightsBtn = document.getElementById("insightsBtn");
+  const insightsPanel = document.getElementById("insightsPanel");
+  const chatList = document.getElementById("chatList");
+  const chatEmpty = document.getElementById("chatEmpty");
+  const chatInput = document.getElementById("chatInput");
+  const chatSendBtn = document.getElementById("chatSendBtn");
+
+  const planChipRow = document.getElementById("planChipRow");
+  const planCustomInput = document.getElementById("planCustomInput");
+  const planCity = document.getElementById("planCity");
+  const planBudget = document.getElementById("planBudget");
+  const planItDetails = document.getElementById("planItDetails");
+  const planItBtn = document.getElementById("planItBtn");
+  const planOutput = document.getElementById("planOutput");
+
+  const aiStatusOn = document.getElementById("aiStatusOn");
+  const aiStatusOnText = document.getElementById("aiStatusOnText");
+  const aiPaywall = document.getElementById("aiPaywall");
+  const subscribeBtn = document.getElementById("subscribeBtn");
+  const subscribeHint = document.getElementById("subscribeHint");
+
+  const syncSignedOut = document.getElementById("syncSignedOut");
+  const syncSignedIn = document.getElementById("syncSignedIn");
+  const syncStatusText = document.getElementById("syncStatusText");
+  const syncEmailText = document.getElementById("syncEmailText");
+  const signOutBtn = document.getElementById("signOutBtn");
+  const gSignInBtn = document.getElementById("gSignInBtn");
+  const syncConflictOverlay = document.getElementById("syncConflictOverlay");
+  const useCloudBtn = document.getElementById("useCloudBtn");
+  const useLocalBtn = document.getElementById("useLocalBtn");
+
+  let entryType = "expense";
+
+  monthLabel.textContent = new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+  entryDate.valueAsDate = new Date();
+
+  function showToast(msg, opts){
+    opts = opts || {};
+    toastMsg.textContent = msg;
+    toast.classList.add("show");
+    clearTimeout(showToast._t);
+
+    if(opts.undo){
+      toastUndoBtn.style.display = "";
+      toastUndoBtn.onclick = ()=>{
+        opts.undo();
+        toast.classList.remove("show");
+        clearTimeout(showToast._t);
+      };
+    }else{
+      toastUndoBtn.style.display = "none";
+      toastUndoBtn.onclick = null;
+    }
+
+    const duration = opts.duration || (opts.undo ? 5000 : 1800);
+    showToast._t = setTimeout(()=> toast.classList.remove("show"), duration);
+  }
+
+  function fmt(n){
+    n = Math.round(n);
+    return "₹" + n.toLocaleString('en-IN');
+  }
+
+  // ---------- Category budget rows ----------
+  function renderCategories(){
+    categoriesWrap.innerHTML = "";
+    const totalSpentByCat = spentByCategory();
+
+    state.categories.forEach((cat, i) => {
+      const spent = totalSpentByCat[cat.id] || 0;
+      const pct = cat.amount > 0 ? Math.min(100, (spent/cat.amount)*100) : 0;
+      const color = PALETTE[i % PALETTE.length];
+
+      const row = document.createElement("div");
+      row.className = "cat-row";
+      row.innerHTML = `
+        <div class="cat-top">
+          <div class="cat-name-wrap">
+            <span class="cat-dot" style="background:${color}"></span>
+            <input class="cat-name" value="${escapeAttr(cat.name)}" data-id="${cat.id}" data-field="name">
+          </div>
+          <div class="amount-input-wrap">
+            <span class="rupee">₹</span>
+            <input type="number" class="amount" value="${cat.amount || ''}" placeholder="0" min="0" data-id="${cat.id}" data-field="amount">
+          </div>
+          <button class="cat-del" data-id="${cat.id}" title="Remove category" aria-label="Remove category">✕</button>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:${color}"></div></div>
+        <div class="cat-meta"><span>${fmt(spent)} spent</span><span>${cat.amount ? Math.round(pct) : 0}% of budget</span></div>
+      `;
+      categoriesWrap.appendChild(row);
+    });
+
+    categoriesWrap.querySelectorAll('input[data-field="name"]').forEach(el=>{
+      el.addEventListener("input", e=>{
+        const cat = state.categories.find(c=>c.id===e.target.dataset.id);
+        if(cat){ cat.name = e.target.value; save(); renderCategorySelect(); renderBreakdown(); }
+      });
+    });
+    categoriesWrap.querySelectorAll('input[data-field="amount"]').forEach(el=>{
+      el.addEventListener("input", e=>{
+        const cat = state.categories.find(c=>c.id===e.target.dataset.id);
+        if(cat){ cat.amount = parseFloat(e.target.value) || 0; save(); renderCategories(); renderStamp(); }
+      });
+    });
+    categoriesWrap.querySelectorAll('.cat-del').forEach(el=>{
+      el.addEventListener("click", e=>{
+        const id = e.target.dataset.id;
+        const idx = state.categories.findIndex(c=>c.id===id);
+        if(idx === -1) return;
+        const removed = state.categories[idx];
+        state.categories.splice(idx, 1);
+        save(); renderCategories(); renderCategorySelect(); renderStamp(); renderBreakdown();
+        showToast(`Removed "${removed.name}"`, { undo: ()=>{
+          state.categories.splice(idx, 0, removed);
+          save(); renderCategories(); renderCategorySelect(); renderStamp(); renderBreakdown();
+        }});
+      });
+    });
+
+    if(state.categories.length === 0){
+      categoriesWrap.innerHTML = `<div class="cat-empty">No budget categories yet — tap "+ Add budget category" below to start planning your month.</div>`;
+    }
+  }
+
+  function escapeAttr(s){
+    return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+  }
+
+  addCatBtn.addEventListener("click", ()=>{
+    state.categories.push({id: cid(), name: "New category", amount: 0});
+    save(); renderCategories(); renderCategorySelect();
+    const inputs = categoriesWrap.querySelectorAll('input[data-field="name"]');
+    const last = inputs[inputs.length-1];
+    if(last){ last.focus(); last.select(); }
+  });
+
+  incomeInput.addEventListener("input", ()=>{
+    state.income = parseFloat(incomeInput.value) || 0;
+    save(); renderStamp();
+  });
+
+  // ---------- Balance stamp ----------
+  function renderStamp(){
+    incomeInput.value = state.income || "";
+    const totalBudgeted = state.categories.reduce((s,c)=>s+(c.amount||0),0);
+    const remaining = state.income - totalBudgeted;
+    stampVal.textContent = fmt(Math.abs(remaining));
+    stampBox.classList.toggle("positive", remaining >= 0);
+    stampBox.classList.toggle("negative", remaining < 0);
+    stampBox.querySelector(".lbl").textContent = remaining >= 0 ? "Unallocated Balance" : "Over Budget By";
+    renderPlanSummary();
+  }
+
+  // ---------- Monthly Plan collapse ----------
+  function isPlanCollapsed(){
+    try{ return localStorage.getItem(PLAN_COLLAPSED_STORAGE) === "1"; }catch(e){ return false; }
+  }
+  function setPlanCollapsed(collapsed){
+    try{ localStorage.setItem(PLAN_COLLAPSED_STORAGE, collapsed ? "1" : "0"); }catch(e){ /* ignore */ }
+    planDetails.style.display = collapsed ? "none" : "";
+    planSummary.style.display = collapsed ? "" : "none";
+    planToggleBtn.textContent = collapsed ? "Edit" : "Hide";
+  }
+  function renderPlanSummary(){
+    const totalBudgeted = state.categories.reduce((s,c)=>s+(c.amount||0),0);
+    const remaining = state.income - totalBudgeted;
+    planSummary.innerHTML =
+      `<span><b>${fmt(state.income)}</b> income</span>` +
+      `<span class="dot-sep">·</span>` +
+      `<span>${state.categories.length} categor${state.categories.length===1?'y':'ies'}</span>` +
+      `<span class="dot-sep">·</span>` +
+      `<span><b>${fmt(Math.abs(remaining))}</b> ${remaining>=0 ? 'unallocated' : 'over budget'}</span>`;
+  }
+  planToggleBtn.addEventListener("click", ()=> setPlanCollapsed(!isPlanCollapsed()));
+
+  // The first time someone finishes entering an income (leaves the field with a
+  // value, having never set one before), tuck the plan away automatically so
+  // the app shows less clutter on every future visit. They can always tap
+  // "Edit" to bring it back — this only auto-collapses once, ever.
+  incomeInput.addEventListener("blur", ()=>{
+    let setupDone = false;
+    try{ setupDone = localStorage.getItem(PLAN_SETUP_DONE_STORAGE) === "1"; }catch(e){ /* ignore */ }
+    if(!setupDone && state.income > 0){
+      try{ localStorage.setItem(PLAN_SETUP_DONE_STORAGE, "1"); }catch(e){ /* ignore */ }
+      setPlanCollapsed(true);
+      showToast("Plan saved — tap \"Edit\" anytime to change it");
+    }
+  });
+
+  // ---------- Ledger entries ----------
+  function renderCategorySelect(){
+    const current = entryCategory.value;
+    entryCategory.innerHTML = state.categories.map(c=>`<option value="${c.id}">${escapeAttr(c.name)}</option>`).join("") + `<option value="__other">Other</option>`;
+    if(current && [...entryCategory.options].some(o=>o.value===current)){
+      entryCategory.value = current;
+    }else{
+      try{
+        const last = localStorage.getItem(LAST_CATEGORY_STORAGE);
+        if(last && [...entryCategory.options].some(o=>o.value===last)) entryCategory.value = last;
+      }catch(e){ /* ignore */ }
+    }
+  }
+
+  typeExpenseBtn.addEventListener("click", ()=> setType("expense"));
+  typeIncomeBtn.addEventListener("click", ()=> setType("income"));
+  function setType(t){
+    entryType = t;
+    typeExpenseBtn.classList.toggle("active", t==="expense");
+    typeIncomeBtn.classList.toggle("active", t==="income");
+  }
+
+  function addEntry(){
+    const amount = parseFloat(entryAmount.value);
+    if(!amount || amount<=0){ showToast("Enter a valid amount"); entryAmount.focus(); return; }
+    const note = entryNote.value.trim() || (entryType==="income" ? "Income" : "Expense");
+    const catId = entryCategory.value;
+    const catName = catId === "__other" ? "Other" : (state.categories.find(c=>c.id===catId)?.name || "Other");
+
+    state.entries.unshift({
+      id: cid(),
+      type: entryType,
+      note, category: catName, categoryId: catId,
+      amount, date: entryDate.value || new Date().toISOString().slice(0,10)
+    });
+    save();
+    try{ localStorage.setItem(LAST_CATEGORY_STORAGE, catId); }catch(e){ /* ignore */ }
+    entryNote.value = ""; entryAmount.value = "";
+    categoryManuallySet = false;
+    suggestChip.classList.remove("show");
+    entryNote.focus();
+    renderLedger(); renderCategories(); renderStamp(); renderBreakdown();
+    showToast((entryType==="income" ? "Income" : "Expense") + " added");
+  }
+  addEntryBtn.addEventListener("click", addEntry);
+  entryAmount.addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); addEntry(); } });
+  entryNote.addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); entryAmount.focus(); } });
+
+  function spentByCategory(){
+    const map = {};
+    state.entries.filter(e=>e.type==="expense").forEach(e=>{
+      map[e.categoryId] = (map[e.categoryId]||0) + e.amount;
+    });
+    return map;
+  }
+
+  function runningBalances(){
+    // entries stored newest-first; compute running balance oldest->newest then map back
+    const chrono = [...state.entries].sort((a,b)=> a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
+    let bal = 0;
+    const balById = {};
+    chrono.forEach(e=>{
+      bal += e.type==="income" ? e.amount : -e.amount;
+      balById[e.id] = bal;
+    });
+    return balById;
+  }
+
+  function renderLedger(){
+    if(state.entries.length===0){
+      ledgerList.innerHTML = `<div class="empty-state">No entries yet — your ledger starts here.</div>`;
+      return;
+    }
+    const balances = runningBalances();
+    ledgerList.innerHTML = state.entries.map(e=>{
+      const d = new Date(e.date + "T00:00:00");
+      const dstr = isNaN(d) ? e.date : d.toLocaleDateString('en-IN', {day:'2-digit', month:'short'});
+      return `
+      <div class="ledger-row">
+        <span class="led-dot ${e.type}"></span>
+        <div class="led-mid">
+          <div class="led-note">${escapeAttr(e.note)}</div>
+          <div class="led-meta">${dstr} · ${escapeAttr(e.category)}</div>
+        </div>
+        <div class="led-amt ${e.type}">${e.type==="income"?"+":"−"}${fmt(e.amount)}</div>
+        <button class="led-del" data-id="${e.id}" aria-label="Delete entry">✕</button>
+      </div>`;
+    }).join("");
+
+    ledgerList.querySelectorAll('.led-del').forEach(btn=>{
+      btn.addEventListener("click", e=>{
+        const id = e.target.dataset.id;
+        const idx = state.entries.findIndex(x=>x.id===id);
+        if(idx === -1) return;
+        const removed = state.entries[idx];
+        state.entries.splice(idx, 1);
+        save(); renderLedger(); renderCategories(); renderStamp(); renderBreakdown();
+        showToast(`Entry deleted`, { undo: ()=>{
+          state.entries.splice(idx, 0, removed);
+          save(); renderLedger(); renderCategories(); renderStamp(); renderBreakdown();
+        }});
+      });
+    });
+  }
+
+  // ---------- Donut breakdown ----------
+  // ---------- Recurring spending patterns ----------
+  function computeRecurringSpends(){
+    const groups = {}; // normalized note -> { note, categoryCounts:{}, total, count, color }
+    state.entries
+      .filter(e => e.type === "expense")
+      .forEach(e=>{
+        const key = e.note.trim().toLowerCase();
+        if(!key) return;
+        if(!groups[key]) groups[key] = { note: e.note.trim(), total: 0, count: 0, categoryCounts: {} };
+        groups[key].total += e.amount;
+        groups[key].count += 1;
+        groups[key].categoryCounts[e.category] = (groups[key].categoryCounts[e.category] || 0) + 1;
+      });
+
+    return Object.values(groups)
+      .filter(g => g.count >= 2) // "recurring" = paid for this more than once
+      .map(g=>{
+        const topCategory = Object.entries(g.categoryCounts).sort((a,b)=>b[1]-a[1])[0][0];
+        const catIndex = state.categories.findIndex(c=>c.name === topCategory);
+        return {
+          note: g.note,
+          count: g.count,
+          total: g.total,
+          perOccurrence: g.total / g.count,
+          category: topCategory,
+          color: PALETTE[catIndex >= 0 ? catIndex % PALETTE.length : 0]
+        };
+      })
+      .sort((a,b)=> b.total - a.total)
+      .slice(0, 6);
+  }
+
+  function renderRecurring(){
+    const patterns = computeRecurringSpends();
+    if(patterns.length === 0){
+      recurringCard.style.display = "none";
+      return;
+    }
+    recurringCard.style.display = "";
+    recurringList.innerHTML = patterns.map(p=>`
+      <div class="recur-row">
+        <span class="recur-dot" style="background:${p.color}"></span>
+        <div class="recur-mid">
+          <div class="recur-name">${escapeAttr(p.note)}</div>
+          <div class="recur-meta">${p.count}× this month · ${fmt(p.perOccurrence)} each <span class="arrow">→</span> ${escapeAttr(p.category)}</div>
+        </div>
+        <div class="recur-total">${fmt(p.total)}<span class="per">total</span></div>
+      </div>
+    `).join("");
+  }
+
+  function renderBreakdown(){
+    renderRecurring();
+    const spent = spentByCategory();
+    const totalSpent = Object.values(spent).reduce((a,b)=>a+b,0);
+    const totalBudgeted = state.categories.reduce((s,c)=>s+(c.amount||0),0);
+    spendPct.textContent = (totalBudgeted>0 ? Math.round((totalSpent/totalBudgeted)*100) : 0) + "%";
+
+    if(totalSpent<=0){
+      donutSvg.innerHTML = `<circle cx="70" cy="70" r="55" fill="none" stroke="#dccfa8" stroke-width="16"/>`;
+      legendWrap.innerHTML = `<div class="empty-state" style="padding:0;">Add expenses to see the breakdown.</div>`;
+      return;
+    }
+
+    let acc = -90; // start at top
+    const R = 55, CX=70, CY=70, C = 2*Math.PI*R;
+    let paths = "";
+    let legend = "";
+    state.categories.forEach((cat,i)=>{
+      const val = spent[cat.id] || 0;
+      if(val<=0) return;
+      const frac = val/totalSpent;
+      const color = PALETTE[i % PALETTE.length];
+      const dash = frac*C;
+      paths += `<circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="${color}" stroke-width="16"
+                 stroke-dasharray="${dash} ${C-dash}" stroke-dashoffset="${-((acc+90)/360)*C}"
+                 transform="rotate(-90 ${CX} ${CY})" stroke-linecap="butt"/>`;
+      acc += frac*360;
+      legend += `<div class="legend-item"><span class="dot" style="background:${color}"></span><span class="name">${escapeAttr(cat.name)}</span><span class="pct">${Math.round(frac*100)}%</span></div>`;
+    });
+    donutSvg.innerHTML = `<circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="#e7d9b4" stroke-width="16"/>` + paths +
+      `<text x="70" y="66" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5675">Spent</text>
+       <text x="70" y="82" text-anchor="middle" font-family="Roboto Slab, serif" font-weight="800" font-size="15" fill="#1b2a4a">${fmt(totalSpent).replace('₹','₹')}</text>`;
+    legendWrap.innerHTML = legend;
+  }
+
+  // ---------- AI: device id & proxied API call ----------
+  function getDeviceId(){
+    try{
+      let id = localStorage.getItem(DEVICE_ID_STORAGE);
+      if(!id){
+        id = "dev_" + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
+        localStorage.setItem(DEVICE_ID_STORAGE, id);
+      }
+      return id;
+    }catch(e){ return "dev_temp_" + Math.random().toString(36).slice(2,10); }
+  }
+
+  async function callClaude({system, messages, model, maxTokens, tools}){
+    let res;
+    try{
+      const body = { model, max_tokens: maxTokens, system, messages };
+      if(tools) body.tools = tools;
+      res = await fetch(WORKER_URL + "/ai", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-device-id": getDeviceId()
+        },
+        body: JSON.stringify(body)
+      });
+    }catch(e){
+      throw new Error("NETWORK");
+    }
+    if(res.status === 429) throw new Error("RATE_LIMIT");
+    if(!res.ok) throw new Error("API_ERROR");
+    const data = await res.json();
+    return (data.content || []).map(b=>b.text||"").join("").trim();
+  }
+
+  function handleAiError(e){
+    const msg = e && e.message;
+    if(msg === "RATE_LIMIT") showToast("You've used today's free AI actions — try again tomorrow");
+    else if(msg === "NETWORK") showToast("Network error — check your connection");
+    else showToast("AI request failed — try again");
+  }
+
+  // ---------- Google Sign-In & cross-device sync ----------
+  function getSyncSession(){
+    try{
+      const raw = localStorage.getItem(SYNC_SESSION_STORAGE);
+      return raw ? JSON.parse(raw) : null;
+    }catch(e){ return null; }
+  }
+  function setSyncSession(session){
+    try{
+      if(session) localStorage.setItem(SYNC_SESSION_STORAGE, JSON.stringify(session));
+      else localStorage.removeItem(SYNC_SESSION_STORAGE);
+    }catch(e){ /* ignore */ }
+  }
+  function isSignedIn(){
+    const s = getSyncSession();
+    return !!(s && s.idToken && s.exp && s.exp > Date.now());
+  }
+
+  function renderSyncUi(){
+    const s = getSyncSession();
+    const signedIn = isSignedIn();
+    syncSignedOut.style.display = signedIn ? "none" : "";
+    syncSignedIn.style.display = signedIn ? "" : "none";
+    if(signedIn){
+      syncEmailText.textContent = `Signed in as ${s.email}`;
+    }
+  }
+
+  function initGoogleSignIn(){
+    if(!('google' in window) || !window.google.accounts) {
+      // GIS script hasn't loaded yet (slow network) — try again shortly
+      setTimeout(initGoogleSignIn, 500);
+      return;
+    }
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleCredentialResponse,
+      auto_select: true
+    });
+    window.google.accounts.id.renderButton(gSignInBtn, {
+      theme: "filled_black", size: "large", shape: "pill", text: "signin_with", width: 260
+    });
+    // Attempts a silent sign-in if the browser remembers a previous consent —
+    // harmless no-op if not (e.g. first visit, or browser blocks it).
+    if(!isSignedIn()) window.google.accounts.id.prompt();
+  }
+
+  async function handleCredentialResponse(response){
+    const idToken = response.credential;
+    // Decode the JWT payload just to read exp/email locally — the Worker independently
+    // re-verifies the signature with Google, this is only for local session bookkeeping.
+    let claims;
+    try{
+      claims = JSON.parse(atob(idToken.split(".")[1].replace(/-/g,"+").replace(/_/g,"/")));
+    }catch(e){ showToast("Sign-in failed — try again"); return; }
+
+    setSyncSession({ idToken, email: claims.email, sub: claims.sub, exp: claims.exp * 1000 });
+    renderSyncUi();
+    showToast(`Signed in as ${claims.email}`);
+    await pullFromCloud();
+  }
+
+  function signOut(){
+    setSyncSession(null);
+    renderSyncUi();
+    if('google' in window && window.google.accounts) window.google.accounts.id.disableAutoSelect();
+    showToast("Signed out — this device keeps its local data");
+  }
+  signOutBtn && signOutBtn.addEventListener("click", signOut);
+
+  function isStateEmpty(s){
+    return (!s.income || s.income === 0) && (!s.entries || s.entries.length === 0);
+  }
+
+  async function pullFromCloud(){
+    const session = getSyncSession();
+    if(!session) return;
+    try{
+      const res = await fetch(WORKER_URL + "/sync/pull", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ idToken: session.idToken })
+      });
+      const result = await res.json();
+      const remote = result.data;
+
+      if(!remote){
+        // Nothing in the cloud yet for this account — push what's on this device.
+        await pushToCloud();
+        return;
+      }
+
+      const localHasRealData = !isStateEmpty(state);
+      const sameData = JSON.stringify(remote) === JSON.stringify(state);
+
+      if(sameData || !localHasRealData){
+        // Cloud data wins by default when this device has nothing meaningful yet.
+        state = remote;
+        save();
+        renderCategories(); renderCategorySelect(); renderStamp(); renderLedger(); renderBreakdown();
+      }else{
+        // Both sides have real, different data — let the person choose rather than guessing.
+        syncConflictOverlay.classList.add("show");
+      }
+    }catch(e){
+      showToast("Couldn't reach sync server — will retry later");
+    }
+  }
+
+  useCloudBtn && useCloudBtn.addEventListener("click", async ()=>{
+    syncConflictOverlay.classList.remove("show");
+    const session = getSyncSession();
+    if(!session) return;
+    try{
+      const res = await fetch(WORKER_URL + "/sync/pull", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ idToken: session.idToken })
+      });
+      const result = await res.json();
+      if(result.data){
+        state = result.data;
+        save();
+        renderCategories(); renderCategorySelect(); renderStamp(); renderLedger(); renderBreakdown();
+        showToast("Loaded your cloud data");
+      }
+    }catch(e){ showToast("Couldn't load cloud data — try again"); }
+  });
+
+  useLocalBtn && useLocalBtn.addEventListener("click", ()=>{
+    syncConflictOverlay.classList.remove("show");
+    pushToCloud(true);
+    showToast("Kept this device's data — pushed to cloud");
+  });
+
+  let cloudPushTimer = null;
+  function scheduleCloudPush(){
+    if(!isSignedIn()) return;
+    clearTimeout(cloudPushTimer);
+    cloudPushTimer = setTimeout(()=> pushToCloud(), SYNC_PUSH_DEBOUNCE_MS);
+  }
+
+  async function pushToCloud(){
+    const session = getSyncSession();
+    if(!session) return;
+    try{
+      await fetch(WORKER_URL + "/sync/push", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ idToken: session.idToken, data: state })
+      });
+    }catch(e){ /* silent — local save already succeeded, will catch up next time */ }
+  }
+
+  // ---------- Trial & subscription (Google Play Billing) ----------
+  function getTrialStart(){
+    try{
+      let start = localStorage.getItem(TRIAL_START_STORAGE);
+      if(!start){
+        start = String(Date.now());
+        localStorage.setItem(TRIAL_START_STORAGE, start);
+      }
+      return parseInt(start, 10);
+    }catch(e){ return Date.now(); }
+  }
+
+  function trialDaysLeft(){
+    const elapsedMs = Date.now() - getTrialStart();
+    const elapsedDays = Math.floor(elapsedMs / (24*60*60*1000));
+    return Math.max(0, TRIAL_DAYS - elapsedDays);
+  }
+
+  function getCachedSubscription(){
+    try{
+      const raw = localStorage.getItem(SUBSCRIPTION_STORAGE);
+      return raw ? JSON.parse(raw) : null;
+    }catch(e){ return null; }
+  }
+  function setCachedSubscription(data){
+    try{ localStorage.setItem(SUBSCRIPTION_STORAGE, JSON.stringify(data)); }catch(e){ /* ignore */ }
+  }
+
+  // Source of truth for "can this device use AI right now"
+  function isEntitled(){
+    const sub = getCachedSubscription();
+    if(sub && sub.entitled){
+      // If we know an expiry and it's passed, don't trust a stale cache
+      if(sub.expiryTime && new Date(sub.expiryTime).getTime() < Date.now()) return false;
+      return true;
+    }
+    return trialDaysLeft() > 0;
+  }
+
+  async function getDigitalGoodsService(){
+    if(!('getDigitalGoodsService' in window)) return null;
+    try{
+      return await window.getDigitalGoodsService('https://play.google.com/billing');
+    }catch(e){ return null; }
+  }
+
+  async function verifyPurchaseWithWorker(purchaseToken){
+    try{
+      const res = await fetch(WORKER_URL + "/verify-purchase", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-device-id": getDeviceId() },
+        body: JSON.stringify({ purchaseToken, subscriptionId: SUBSCRIPTION_ID, packageName: PACKAGE_NAME })
+      });
+      const data = await res.json();
+      setCachedSubscription({ ...data, purchaseToken, checkedAt: Date.now() });
+      return data;
+    }catch(e){
+      return null; // network hiccup — keep whatever we had cached
+    }
+  }
+
+  // Check for purchases the user already made (e.g. reinstalled the app)
+  async function checkExistingPurchases(){
+    const service = await getDigitalGoodsService();
+    if(!service) return;
+    try{
+      const purchases = await service.listPurchases();
+      for(const p of purchases){
+        if(p.itemId === SUBSCRIPTION_ID){
+          await verifyPurchaseWithWorker(p.purchaseToken);
+        }
+      }
+    }catch(e){ /* Digital Goods not available in this context (e.g. plain browser) */ }
+    renderAiGate();
+  }
+
+  async function startSubscriptionPurchase(){
+    const service = await getDigitalGoodsService();
+    if(!service){
+      showToast("Subscribing only works in the app installed from Play Store");
+      return;
+    }
+    subscribeBtn.disabled = true;
+    subscribeBtn.textContent = "Opening Google Play...";
+    try{
+      const details = await service.getDetails([SUBSCRIPTION_ID]);
+      if(!details || !details.length){
+        showToast("Subscription isn't set up in Play Console yet");
+        return;
+      }
+      const supportedInstruments = [{
+        supportedMethods: "https://play.google.com/billing",
+        data: { sku: SUBSCRIPTION_ID }
+      }];
+      const paymentDetails = {
+        total: { label: "Budget Passbook Premium", amount: { currency: "INR", value: "50" } }
+      };
+      const request = new PaymentRequest(supportedInstruments, paymentDetails);
+      const paymentResponse = await request.show();
+      const token = paymentResponse.details.purchaseToken;
+      await paymentResponse.complete('success');
+      const result = await verifyPurchaseWithWorker(token);
+      if(result && result.entitled){
+        showToast("Subscribed! AI features unlocked.");
+      }else{
+        showToast("Purchase made — waiting on confirmation, try reopening the app in a minute");
+      }
+    }catch(e){
+      showToast("Purchase cancelled or unavailable");
+    }finally{
+      subscribeBtn.disabled = false;
+      subscribeBtn.textContent = "Subscribe — ₹50/month";
+      renderAiGate();
+    }
+  }
+
+  function renderAiGate(){
+    const entitled = isEntitled();
+    aiStatusOn.style.display = entitled ? "" : "none";
+    aiPaywall.style.display = entitled ? "none" : "";
+
+    if(entitled){
+      const sub = getCachedSubscription();
+      aiStatusOnText.textContent = (sub && sub.entitled)
+        ? "✨ AI features ready — Premium"
+        : `✨ AI features ready — trial, ${trialDaysLeft()} day${trialDaysLeft()===1?"":"s"} left`;
+    }else{
+      subscribeHint.textContent = ('getDigitalGoodsService' in window)
+        ? "Payment is handled securely by Google Play."
+        : "Open the app installed from Play Store to subscribe — this browser preview can't process payments.";
+    }
+  }
+
+  subscribeBtn && subscribeBtn.addEventListener("click", startSubscriptionPurchase);
+
+  // Periodically re-confirm with Google so a cancelled subscription doesn't stay "active" forever
+  function maybeRecheckSubscription(){
+    const sub = getCachedSubscription();
+    if(sub && sub.purchaseToken && (!sub.checkedAt || Date.now() - sub.checkedAt > RECHECK_INTERVAL_MS)){
+      verifyPurchaseWithWorker(sub.purchaseToken).then(renderAiGate);
+    }
+  }
+
+  // ---------- AI: category auto-suggest ----------
+  let categoryManuallySet = false;
+  entryCategory.addEventListener("change", ()=>{
+    categoryManuallySet = true;
+    suggestChip.classList.remove("show");
+  });
+
+  let suggestTimer;
+  entryNote.addEventListener("input", ()=>{
+    clearTimeout(suggestTimer);
+    suggestChip.classList.remove("show");
+    const text = entryNote.value.trim();
+    if(text.length < 3 || categoryManuallySet || !isEntitled()) return;
+    suggestTimer = setTimeout(()=> suggestCategory(text), 700);
+  });
+
+  async function suggestCategory(text){
+    try{
+      const catNames = state.categories.map(c=>c.name);
+      const system = `You categorize personal expense/income descriptions into exactly one of these categories: ${catNames.join(", ")}, Other. Respond with ONLY the category name, nothing else, no punctuation.`;
+      const result = await callClaude({
+        system,
+        messages: [{role:"user", content: `Description: "${text}"`}],
+        model: AI_MODEL_FAST,
+        maxTokens: 20
+      });
+      if(categoryManuallySet) return; // user already chose one while we were waiting
+      const cleaned = result.replace(/[."'\n]/g,"").trim();
+      const match = state.categories.find(c=> c.name.toLowerCase() === cleaned.toLowerCase());
+      const chosenId = match ? match.id : "__other";
+      const chosenName = match ? match.name : "Other";
+      suggestText.textContent = `Suggested: ${chosenName} — tap to apply`;
+      suggestChip.classList.add("show");
+      suggestChip.onclick = ()=>{
+        entryCategory.value = chosenId;
+        suggestChip.classList.remove("show");
+      };
+    }catch(e){ /* silent fail for background suggestion */ }
+  }
+
+  // ---------- AI: natural-language quick add ----------
+  async function parseQuickAdd(){
+    const text = quickAddInput.value.trim();
+    if(!text) return;
+    if(!isEntitled()){ showToast("Subscribe above to use AI quick add"); return; }
+
+    quickAddBtn.disabled = true;
+    quickAddBtn.textContent = "...";
+    try{
+      const catNames = state.categories.map(c=>c.name);
+      const todayStr = new Date().toISOString().slice(0,10);
+      const system = `You extract a single money transaction from a short, casual, possibly Indian-English sentence someone typed into a budget app. Today's date is ${todayStr}.
+Categories available: ${catNames.join(", ")}, Other.
+Respond with ONLY valid JSON, no markdown fences, no explanation, in exactly this shape:
+{"amount": number, "type": "expense" or "income", "category": "one of the listed categories, or Other", "note": "short 2-5 word description", "date": "YYYY-MM-DD"}
+Rules: amount must be a positive number extracted from the text (assume rupees). If someone received/earned money, type is "income". If a relative date like "yesterday" is mentioned, calculate the real date from today's date; otherwise use today's date. Keep "note" short and clean, title case, no filler words like "spent" or "on".`;
+
+      const result = await callClaude({
+        system,
+        messages: [{role:"user", content: text}],
+        model: AI_MODEL_FAST,
+        maxTokens: 150
+      });
+
+      let parsed;
+      try{
+        const cleaned = result.replace(/```json|```/g,"").trim();
+        parsed = JSON.parse(cleaned);
+      }catch(e){
+        showToast("Couldn't understand that — try rephrasing");
+        return;
+      }
+
+      const amount = parseFloat(parsed.amount);
+      if(!amount || amount <= 0){
+        showToast("Couldn't find a valid amount — try rephrasing");
+        return;
+      }
+
+      setType(parsed.type === "income" ? "income" : "expense");
+      entryNote.value = (parsed.note || text).toString().slice(0, 60);
+      entryAmount.value = Math.round(amount);
+
+      const match = state.categories.find(c=> c.name.toLowerCase() === String(parsed.category||"").toLowerCase());
+      entryCategory.value = match ? match.id : "__other";
+      categoryManuallySet = true;
+      suggestChip.classList.remove("show");
+
+      if(parsed.date && /^\d{4}-\d{2}-\d{2}$/.test(parsed.date)){
+        entryDate.value = parsed.date;
+      }
+
+      quickAddInput.value = "";
+      showToast("Filled in below — check and tap Add");
+      entryAmount.focus();
+    }catch(e){
+      handleAiError(e);
+    }finally{
+      quickAddBtn.disabled = false;
+      quickAddBtn.textContent = "Parse";
+    }
+  }
+  quickAddBtn.addEventListener("click", parseQuickAdd);
+  quickAddInput.addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); parseQuickAdd(); } });
+
+  // ---------- AI: insights ----------
+  insightsBtn.addEventListener("click", async ()=>{
+    if(!isEntitled()){ showToast("Subscribe above to use AI insights"); return; }
+    insightsBtn.disabled = true;
+    insightsBtn.innerHTML = `<span class="spinner"></span> Thinking...`;
+    try{
+      const spent = spentByCategory();
+      const summary = {
+        income: state.income,
+        categories: state.categories.map(c=>({name:c.name, budgeted:c.amount, spent: spent[c.id]||0})),
+        recentEntries: state.entries.slice(0,10).map(e=>({type:e.type, note:e.note, category:e.category, amount:e.amount, date:e.date}))
+      };
+      const system = "You are a concise personal finance assistant for an Indian user, currency INR (rupees). Given their monthly budget as JSON, give exactly 3 short, specific, encouraging-but-honest insights or tips, each one sentence, referencing actual numbers where useful. Return them as a plain numbered list only — no preamble, no markdown formatting.";
+      const result = await callClaude({
+        system,
+        messages: [{role:"user", content: JSON.stringify(summary)}],
+        model: AI_MODEL_SMART,
+        maxTokens: 300
+      });
+      const lines = result.split(/\n+/).map(l=>l.replace(/^\d+[\.\)]\s*/,"").trim()).filter(Boolean);
+      insightsPanel.innerHTML = lines.map(l=>`<div class="ai-insight-item"><span class="spark">✨</span><span>${escapeAttr(l)}</span></div>`).join("");
+      insightsPanel.classList.add("show");
+    }catch(e){
+      handleAiError(e);
+    }finally{
+      insightsBtn.disabled = false;
+      insightsBtn.innerHTML = `✨ Get AI Insights`;
+    }
+  });
+
+  // ---------- AI: chat assistant ----------
+  let chatHistory = [];
+
+  function addChatBubble(role, content, isHtml){
+    const div = document.createElement("div");
+    div.className = "chat-bubble " + (role==="user" ? "user" : "ai");
+    if(isHtml) div.innerHTML = content; else div.textContent = content;
+    chatList.appendChild(div);
+    chatList.scrollTop = chatList.scrollHeight;
+    return div;
+  }
+
+  async function sendChat(){
+    const text = chatInput.value.trim();
+    if(!text) return;
+    if(!isEntitled()){ showToast("Subscribe above to use Ask Passbook"); return; }
+    if(chatEmpty && chatEmpty.parentNode) chatEmpty.remove();
+    addChatBubble("user", text);
+    chatHistory.push({role:"user", content:text});
+    chatInput.value = "";
+    chatSendBtn.disabled = true;
+    const thinkingEl = addChatBubble("ai", `<span class="spinner"></span>`, true);
+    try{
+      const spent = spentByCategory();
+      const totalBudgeted = state.categories.reduce((s,c)=>s+(c.amount||0),0);
+      const contextObj = {
+        income: state.income,
+        remainingUnallocated: state.income - totalBudgeted,
+        categories: state.categories.map(c=>({name:c.name, budgeted:c.amount, spent: spent[c.id]||0})),
+        recentEntries: state.entries.slice(0,15).map(e=>({type:e.type, note:e.note, category:e.category, amount:e.amount, date:e.date}))
+      };
+      const system = `You are "Passbook", a friendly, concise personal finance assistant inside a budget app for an Indian user. Currency is INR (₹). Answer only using the budget data provided below; if something isn't in the data, say you don't have that information. Keep answers to 2-4 short sentences unless the user asks for more detail.\n\nCurrent budget data:\n${JSON.stringify(contextObj)}`;
+      const reply = await callClaude({
+        system,
+        messages: chatHistory,
+        model: AI_MODEL_SMART,
+        maxTokens: 400
+      });
+      thinkingEl.innerHTML = escapeAttr(reply).replace(/\n/g,"<br>");
+      chatHistory.push({role:"assistant", content: reply});
+    }catch(e){
+      thinkingEl.textContent = "Sorry, I couldn't respond just now.";
+      handleAiError(e);
+      chatHistory.pop(); // remove the unanswered user turn so retry isn't malformed
+    }finally{
+      chatSendBtn.disabled = false;
+      chatList.scrollTop = chatList.scrollHeight;
+    }
+  }
+
+  chatSendBtn.addEventListener("click", sendChat);
+  chatInput.addEventListener("keydown", e=>{ if(e.key==="Enter") sendChat(); });
+
+  // ---------- AI: Plan It (occasion planner with real weather + web search) ----------
+  let selectedOccasion = "Date Night";
+
+  try{
+    const savedCity = localStorage.getItem(LAST_CITY_STORAGE);
+    if(savedCity) planCity.value = savedCity;
+  }catch(e){ /* ignore */ }
+
+  planChipRow.querySelectorAll(".plan-chip").forEach(chip=>{
+    chip.addEventListener("click", ()=>{
+      planChipRow.querySelectorAll(".plan-chip").forEach(c=>c.classList.remove("active"));
+      chip.classList.add("active");
+      const occ = chip.dataset.occasion;
+      if(occ === "__custom"){
+        planCustomInput.style.display = "";
+        planCustomInput.focus();
+        selectedOccasion = planCustomInput.value.trim() || "an outing";
+      }else{
+        planCustomInput.style.display = "none";
+        selectedOccasion = occ;
+      }
+    });
+  });
+  planCustomInput.addEventListener("input", ()=>{
+    selectedOccasion = planCustomInput.value.trim() || "an outing";
+  });
+
+  // WMO weather codes → short plain-English description
+  function describeWeatherCode(code){
+    const map = {
+      0:"clear sky", 1:"mostly clear", 2:"partly cloudy", 3:"overcast",
+      45:"foggy", 48:"foggy",
+      51:"light drizzle", 53:"drizzle", 55:"heavy drizzle",
+      61:"light rain", 63:"rain", 65:"heavy rain",
+      66:"freezing rain", 67:"freezing rain",
+      71:"light snow", 73:"snow", 75:"heavy snow",
+      80:"light showers", 81:"showers", 82:"heavy showers",
+      95:"thunderstorms", 96:"thunderstorms with hail", 99:"severe thunderstorms"
+    };
+    return map[code] || "mixed conditions";
+  }
+
+  // Free, no-API-key weather lookup (Open-Meteo) — real data, not AI guesswork.
+  async function getWeatherSummary(city){
+    if(!city) return null;
+    try{
+      const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1`);
+      const geo = await geoRes.json();
+      if(!geo.results || !geo.results.length) return null;
+      const { latitude, longitude, name, country } = geo.results[0];
+
+      const wRes = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}` +
+        `&current=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max` +
+        `&timezone=auto&forecast_days=2`
+      );
+      const w = await wRes.json();
+      if(!w.current) return null;
+
+      const todayDesc = describeWeatherCode(w.daily.weathercode[0]);
+      const tomorrowDesc = describeWeatherCode(w.daily.weathercode[1]);
+      const rainChance = w.daily.precipitation_probability_max[0];
+
+      return {
+        text: `Weather in ${name}, ${country}: currently ${Math.round(w.current.temperature_2m)}°C, ${todayDesc}. ` +
+              `Today's range ${Math.round(w.daily.temperature_2m_min[0])}–${Math.round(w.daily.temperature_2m_max[0])}°C, ` +
+              `${rainChance}% chance of rain. Tomorrow: ${tomorrowDesc}, ` +
+              `${Math.round(w.daily.temperature_2m_min[1])}–${Math.round(w.daily.temperature_2m_max[1])}°C.`,
+        display: `${Math.round(w.current.temperature_2m)}°C, ${todayDesc} in ${name} · ${rainChance}% rain chance today`
+      };
+    }catch(e){
+      return null; // plan still works without weather if this fails
+    }
+  }
+
+  async function planIt(){
+    if(!isEntitled()){ showToast("Subscribe above to use Plan It"); return; }
+
+    const city = planCity.value.trim();
+    const budget = parseFloat(planBudget.value) || 0;
+    const details = planItDetails.value.trim();
+    const occasion = selectedOccasion;
+
+    planItBtn.disabled = true;
+    planItBtn.innerHTML = `<span class="spinner"></span> Planning...`;
+    planOutput.style.display = "none";
+
+    try{
+      const weather = city ? await getWeatherSummary(city) : null;
+      try{ if(city) localStorage.setItem(LAST_CITY_STORAGE, city); }catch(e){ /* ignore */ }
+
+      const system = `You are a practical planning assistant inside Budget Passbook, a personal budget app. Help the user plan a "${occasion}"${budget ? ` with a budget of ₹${budget}` : ''}${city ? ` in ${city}` : ''}.
+${weather ? weather.text : 'Weather data is not available — do not guess or invent weather conditions.'}
+
+You have web search available — use it to find current, real, general deals or offers relevant to this occasion in India (dining offers, ticket deals, seasonal sales, ride-hailing promos, etc). Only mention an offer if you actually found it through search; never invent specific percentages or card names. Always remind the user to verify exact terms in the relevant app or bank portal since offers change frequently and vary by card and bank.
+
+Respond in plain text (no markdown headers or asterisks), under 180 words, warm and practical:
+1. A one-line budget breakdown suited to the occasion and amount
+2. 2-4 concrete, specific suggestions (places, activities, timing) suited to the occasion, weather, and budget
+3. If you found a real current offer via search, mention it briefly with the verify reminder`;
+
+      const userMsg = details ? `Additional details from the user: ${details}` : `No additional details provided.`;
+
+      const result = await callClaude({
+        system,
+        messages: [{ role:"user", content:userMsg }],
+        model: AI_MODEL_SMART,
+        maxTokens: 600,
+        tools: [{ type: "web_search_20250305", name: "web_search" }]
+      });
+
+      planOutput.innerHTML =
+        (weather ? `<div class="plan-weather">🌤 ${escapeAttr(weather.display)}</div>` : '') +
+        escapeAttr(result);
+      planOutput.style.display = "";
+    }catch(e){
+      handleAiError(e);
+    }finally{
+      planItBtn.disabled = false;
+      planItBtn.textContent = "Get My Plan";
+    }
+  }
+  planItBtn.addEventListener("click", planIt);
+
+  // ---------- init ----------
+  function maybeShowOnboarding(){
+    let seen = false;
+    try{ seen = !!localStorage.getItem(ONBOARDED_STORAGE); }catch(e){ /* ignore */ }
+    if(!seen){
+      onboardOverlay.classList.add("show");
+    }
+  }
+  function dismissOnboarding(){
+    onboardOverlay.classList.remove("show");
+    try{ localStorage.setItem(ONBOARDED_STORAGE, "1"); }catch(e){ /* ignore */ }
+  }
+  onboardDismissBtn.addEventListener("click", dismissOnboarding);
+  onboardOverlay.addEventListener("click", e=>{ if(e.target === onboardOverlay) dismissOnboarding(); });
+
+  function init(){
+    renderCategories();
+    renderCategorySelect();
+    renderStamp();
+    renderLedger();
+    renderBreakdown();
+    setPlanCollapsed(isPlanCollapsed());
+    getTrialStart(); // starts the trial clock on first-ever open
+    renderAiGate();
+    maybeRecheckSubscription();
+    checkExistingPurchases(); // also calls renderAiGate() when it resolves
+    maybeShowOnboarding();
+    renderSyncUi();
+    initGoogleSignIn();
+    if(isSignedIn()) pullFromCloud();
+  }
+  init();
+
+  // ---------- PWA install prompt ----------
+  let deferredPrompt;
+  const installBtn = document.getElementById("installBtn");
+  window.addEventListener("beforeinstallprompt", (e)=>{
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.classList.add("show");
+  });
+  installBtn.addEventListener("click", async ()=>{
+    if(!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    installBtn.classList.remove("show");
+  });
+  window.addEventListener("appinstalled", ()=>{
+    installBtn.classList.remove("show");
+    showToast("Installed! Find it on your home screen.");
+  });
+
+  if("serviceWorker" in navigator){
+    window.addEventListener("load", ()=>{
+      navigator.serviceWorker.register("sw.js").catch(()=>{ /* offline caching optional */ });
+    });
+  }
+})();
+</script>
+</body>
+</html>
