@@ -14,7 +14,7 @@ ALLOWED_ORIGIN = "*"
 # The OAuth Client ID from Google Cloud Console (see worker/GOOGLE-SIGNIN-SETUP.md).
 # This is not secret — it's the same value embedded in index.html's frontend JS —
 # so a plain var is fine here, no need for `wrangler secret`.
-GOOGLE_CLIENT_ID = "REPLACE_WITH_YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+GOOGLE_CLIENT_ID = "989352620543-3bc28mmr6ofh13d6qee6fjauv5ke1in4.apps.googleusercontent.com"
 
 # Secrets needed (set with `wrangler secret put <NAME>`, not written here):
 #   ANTHROPIC_API_KEY           — your Anthropic API key
